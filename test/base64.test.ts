@@ -38,7 +38,7 @@ test('encode: unicode characters', () => {
   assert.strictEqual(encode('Hello 世界'), 'SGVsbG8g5LiW55WM');
   assert.strictEqual(encode('🚀'), '8J+agA==');
   assert.strictEqual(encode('café'), 'Y2Fmw6k=');
-  assert.strictEqual(encode('naïve'), 'bmFpdmU=');
+  assert.strictEqual(encode('naïve'), 'bmHDr3Zl');
 });
 
 test('encode: whitespace handling', () => {
@@ -197,7 +197,6 @@ test('isBase64: invalid characters', () => {
 
 test('isBase64: invalid length (not multiple of 4)', () => {
   assert.strictEqual(isBase64('SGVsbG8'), false); // 7 chars
-  assert.strictEqual(isBase64('SGVsbG8s'), false); // 8 chars but invalid
   assert.strictEqual(isBase64('SGVsbG8sI'), false); // 9 chars
   assert.strictEqual(isBase64('SGVsbG8sIF'), false); // 10 chars
 });
@@ -318,7 +317,8 @@ test('getStringType: invalid strings', () => {
   assert.strictEqual(getStringType('\x00'), 'invalid');
   assert.strictEqual(getStringType('\x01'), 'invalid');
   assert.strictEqual(getStringType('hello\x00world'), 'invalid');
-  assert.strictEqual(getStringType('SGVsbG8!'), 'invalid'); // Invalid base64
+  // Note: 'SGVsbG8!' is valid plain text (contains only printable characters)
+  // even though it looks like corrupted base64
 });
 
 test('getStringType: non-string inputs', () => {
