@@ -9,6 +9,7 @@ A TypeScript module providing base64 encoding, decoding, and string type validat
 - Validate base64 and plain text strings
 - Detect string types automatically
 - Designed for Node.js (local or remote server installations)
+- Built-in security features: input size limits, DoS protection, generic error messages
 
 ## Requirements
 
@@ -34,6 +35,28 @@ npm run example
 ```
 
 This will run a comprehensive example script demonstrating all features of the module.
+
+## Security Configuration
+
+The module includes security features to prevent DoS attacks and information disclosure:
+
+```typescript
+import { configureSecurity } from './base64.js';
+
+// Set custom maximum input size (default: 10MB)
+configureSecurity({ maxInputSize: 5 * 1024 * 1024 }); // 5MB
+
+// Disable size limits (not recommended for production)
+configureSecurity({ maxInputSize: 0 });
+```
+
+**Security Features:**
+- Input size validation (default: 10MB maximum)
+- Generic error messages to prevent information disclosure
+- DoS protection via size limits
+- Input validation before processing
+
+See [SECURITY.md](./SECURITY.md) for detailed security information.
 
 ## Usage
 
@@ -131,7 +154,20 @@ Normalizes a base64 string by removing whitespace and validating format.
 
 **Returns:** Normalized base64 string
 
-**Throws:** `Error` if input is not valid base64
+**Throws:** 
+- `TypeError` if input is not a string
+- `Error` if input exceeds maximum size limit
+- `Error` if input is not valid base64
+
+### configureSecurity(config: SecurityConfig): void
+
+Configures security settings for the module.
+
+**Parameters:**
+- `config` - Security configuration object
+  - `maxInputSize` - Maximum input size in bytes (default: 10MB, set to 0 to disable)
+
+**Throws:** `Error` if configuration is invalid
 
 ## Testing
 

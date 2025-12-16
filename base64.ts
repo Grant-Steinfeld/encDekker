@@ -3,6 +3,11 @@
  * 
  * This module is designed for Node.js environments (local or remote server installations).
  * It uses Node.js Buffer API for base64 operations.
+ * 
+ * Security Features:
+ * - Input size limits to prevent DoS attacks
+ * - Generic error messages to prevent information disclosure
+ * - Input validation before processing
  */
 
 import { Buffer } from 'node:buffer';
@@ -10,14 +15,73 @@ import { Buffer } from 'node:buffer';
 export type StringType = 'plain-text' | 'base64' | 'invalid';
 
 /**
+ * Configuration options for security limits
+ */
+export interface SecurityConfig {
+    /**
+     * Maximum input size in bytes (default: 10MB)
+     * Set to 0 to disable size limits (not recommended for production)
+     */
+    maxInputSize?: number;
+}
+
+// Default security configuration
+const DEFAULT_MAX_INPUT_SIZE = 10 * 1024 * 1024; // 10MB
+
+// Internal configuration (can be overridden)
+let securityConfig: SecurityConfig = {
+    maxInputSize: DEFAULT_MAX_INPUT_SIZE
+};
+
+/**
+ * Configure security settings for the module
+ * @param config - Security configuration options
+ */
+export function configureSecurity(config: SecurityConfig): void {
+    if (config.maxInputSize !== undefined) {
+        if (config.maxInputSize < 0) {
+            throw new Error('maxInputSize must be a non-negative number');
+        }
+        securityConfig.maxInputSize = config.maxInputSize;
+    }
+}
+
+/**
+ * Validates input size against security limits
+ * @param input - The input string to validate
+ * @param operation - Name of the operation for error messages
+ * @throws Error if input exceeds maximum size
+ */
+function validateInputSize(input: string, operation: string): void {
+    if (securityConfig.maxInputSize === 0) {
+        return; // Size limits disabled
+    }
+
+    const maxSize = securityConfig.maxInputSize ?? DEFAULT_MAX_INPUT_SIZE;
+    const inputSize = Buffer.byteLength(input, 'utf8');
+
+    if (inputSize > maxSize) {
+        const maxSizeMB = (maxSize / (1024 * 1024)).toFixed(1);
+        const inputSizeMB = (inputSize / (1024 * 1024)).toFixed(1);
+        throw new Error(
+            `Input size (${inputSizeMB}MB) exceeds maximum allowed size (${maxSizeMB}MB)`
+        );
+    }
+}
+
+/**
  * Encodes a string to base64
  * @param text - The plain text string to encode
  * @returns Base64 encoded string
+ * @throws TypeError if input is not a string
+ * @throws Error if input exceeds maximum size limit
  */
 export function encode(text: string): string {
     if (typeof text !== 'string') {
         throw new TypeError('Input must be a string');
     }
+
+    validateInputSize(text, 'encode');
 
     return Buffer.from(text, 'utf8').toString('base64');
 }
@@ -26,6 +90,8 @@ export function encode(text: string): string {
  * Decodes a base64 string to plain text
  * @param base64 - The base64 encoded string to decode
  * @returns Decoded plain text string
+ * @throws TypeError if input is not a string
+ * @throws Error if input exceeds maximum size limit
  * @throws Error if the input is not valid base64
  */
 export function decode(base64: string): string {
@@ -38,17 +104,20 @@ export function decode(base64: string): string {
         return '';
     }
 
+    validateInputSize(base64, 'decode');
+
     // Remove whitespace and padding inconsistencies
     const cleaned = base64.trim().replace(/\s/g, '');
 
     if (!isBase64(cleaned)) {
-        throw new Error('Input is not valid base64');
+        throw new Error('Invalid base64 input');
     }
 
     try {
         return Buffer.from(cleaned, 'base64').toString('utf8');
     } catch (error) {
-        throw new Error(`Failed to decode base64: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        // Generic error message to prevent information disclosure
+        throw new Error('Failed to decode base64 input');
     }
 }
 
@@ -60,6 +129,15 @@ export function decode(base64: string): string {
 export function isBase64(str: string): boolean {
     if (typeof str !== 'string' || str.length === 0) {
         return false;
+    }
+
+    // Early size check to prevent DoS
+    if (securityConfig.maxInputSize !== undefined && securityConfig.maxInputSize > 0) {
+        const maxSize = securityConfig.maxInputSize;
+        const inputSize = Buffer.byteLength(str, 'utf8');
+        if (inputSize > maxSize) {
+            return false;
+        }
     }
 
     // Remove whitespace for validation
@@ -172,11 +250,19 @@ export function getStringType(str: string): StringType {
  * Validates and normalizes a base64 string (removes whitespace, validates format)
  * @param base64 - The base64 string to normalize
  * @returns Normalized base64 string
+ * @throws TypeError if input is not a string
+ * @throws Error if input exceeds maximum size limit
  * @throws Error if the input is not valid base64
  */
 export function normalizeBase64(base64: string): string {
+    if (typeof base64 !== 'string') {
+        throw new TypeError('Input must be a string');
+    }
+
+    validateInputSize(base64, 'normalizeBase64');
+
     if (!isBase64(base64)) {
-        throw new Error('Input is not valid base64');
+        throw new Error('Invalid base64 input');
     }
 
     return base64.trim().replace(/\s/g, '');
