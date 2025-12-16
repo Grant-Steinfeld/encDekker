@@ -59,6 +59,11 @@ export function decode(base64: string): string {
         throw new TypeError('Input must be a string');
     }
 
+    // Handle empty string
+    if (base64.trim() === '') {
+        return '';
+    }
+
     // Remove whitespace and padding inconsistencies
     const cleaned = base64.trim().replace(/\s/g, '');
 
@@ -96,6 +101,11 @@ export function isBase64(str: string): boolean {
 
     // Remove whitespace for validation
     const cleaned = str.trim().replace(/\s/g, '');
+
+    // If after cleaning we have an empty string, it's not valid base64
+    if (cleaned.length === 0) {
+        return false;
+    }
 
     // Base64 strings should only contain: A-Z, a-z, 0-9, +, /, and = (padding)
     // Length should be a multiple of 4 (after padding)
@@ -152,14 +162,32 @@ export function isPlainText(str: string): boolean {
         return false;
     }
 
+    // Empty string is considered plain text
+    if (str.length === 0) {
+        return true;
+    }
+
+    // Check for control characters first (except common whitespace)
+    // Control characters are 0x00-0x1F and 0x7F, excluding tab (0x09), newline (0x0A), and carriage return (0x0D)
+    for (let i = 0; i < str.length; i++) {
+        const code = str.charCodeAt(i);
+        if (code < 0x20 && code !== 0x09 && code !== 0x0A && code !== 0x0D) {
+            return false;
+        }
+        if (code === 0x7F) {
+            return false;
+        }
+    }
+
     // If it's valid base64, it's not plain text
-    if (isBase64(str)) {
+    // But we need to check the cleaned version to avoid false positives with whitespace-only strings
+    const cleaned = str.trim().replace(/\s/g, '');
+    if (cleaned.length > 0 && isBase64(cleaned)) {
         return false;
     }
 
     // Check if string contains only printable characters and common whitespace
     // This includes letters, numbers, punctuation, and common symbols
-    // Exclude control characters except common whitespace (space, tab, newline, etc.)
     const plainTextRegex = /^[\x20-\x7E\r\n\t\u00A0-\uFFFF]*$/;
 
     return plainTextRegex.test(str);
