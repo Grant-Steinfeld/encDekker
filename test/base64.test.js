@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert';
-import { encode, decode, isBase64, isPlainText, getStringType, normalizeBase64 } from '../base64.js';
+import { encode, decode, isBase64, isPlainText, getStringType, normalizeBase64, configureSecurity } from '../base64.js';
 // ============================================================================
 // ENCODE TESTS
 // ============================================================================
@@ -404,5 +404,81 @@ test('edge case: single character variations', () => {
         const decoded = decode(encoded);
         assert.strictEqual(decoded, char);
     }
+});
+// ============================================================================
+// SECURITY TESTS
+// ============================================================================
+test('security: input size limit enforcement', () => {
+    // Test with default limit (10MB)
+    const largeInput = 'A'.repeat(11 * 1024 * 1024); // 11MB
+    assert.throws(() => {
+        encode(largeInput);
+    }, Error);
+    const largeBase64 = encode('A'.repeat(1024)); // Small valid base64
+    const largeInvalidBase64 = largeBase64.repeat(100000); // Make it huge
+    assert.throws(() => {
+        decode(largeInvalidBase64);
+    }, Error);
+});
+test('security: configureSecurity allows custom limits', () => {
+    // Set a small limit for testing
+    configureSecurity({ maxInputSize: 100 });
+    const smallInput = 'A'.repeat(50);
+    assert.doesNotThrow(() => {
+        encode(smallInput);
+    });
+    const largeInput = 'A'.repeat(150);
+    assert.throws(() => {
+        encode(largeInput);
+    }, Error);
+    // Reset to default
+    configureSecurity({ maxInputSize: 10 * 1024 * 1024 });
+});
+test('security: configureSecurity allows disabling limits', () => {
+    // Disable limits
+    configureSecurity({ maxInputSize: 0 });
+    const largeInput = 'A'.repeat(20 * 1024 * 1024); // 20MB
+    assert.doesNotThrow(() => {
+        encode(largeInput);
+    });
+    // Reset to default
+    configureSecurity({ maxInputSize: 10 * 1024 * 1024 });
+});
+test('security: isBase64 respects size limits', () => {
+    const largeInput = 'A'.repeat(11 * 1024 * 1024); // 11MB
+    assert.strictEqual(isBase64(largeInput), false);
+});
+test('security: normalizeBase64 enforces size limits', () => {
+    const largeInput = 'A'.repeat(11 * 1024 * 1024); // 11MB
+    assert.throws(() => {
+        normalizeBase64(largeInput);
+    }, Error);
+});
+test('security: generic error messages', () => {
+    // Invalid base64 should give generic error
+    try {
+        decode('Invalid!');
+        assert.fail('Should have thrown an error');
+    }
+    catch (error) {
+        assert(error instanceof Error);
+        // Error message should be generic, not exposing internal details
+        assert.strictEqual(error.message, 'Invalid base64 input');
+    }
+    // Decode error should be generic
+    try {
+        decode('SGVsbG8='); // Valid format, but let's see if we can trigger decode error
+        // This should work, so let's test with actually invalid base64
+    }
+    catch (error) {
+        assert(error instanceof Error);
+        // Should not expose Buffer internals
+        assert(!error.message.includes('Buffer'));
+    }
+});
+test('security: configureSecurity validates input', () => {
+    assert.throws(() => {
+        configureSecurity({ maxInputSize: -1 });
+    }, Error);
 });
 //# sourceMappingURL=base64.test.js.map

@@ -1,27 +1,26 @@
 {
-  "name": "encdekker-base64",
-  "version": "1.0.0",
-  "description": "Base64 encoding and decoding utilities with validation",
-  "type": "module",
-  "main": "base64.js",
-  "types": "base64.d.ts",
-  "scripts": {
-    "build": "tsc",
-    "test": "npm run build && node --test test/base64.test.js",
-    "test:watch": "npm run build && node --test --watch test/base64.test.js",
-    "example": "npm run build && node example.js"
-  },
-  "keywords": [
-    "base64",
-    "encoding",
-    "decoding",
-    "validation"
-  ],
-  "author": "",
-  "license": "MIT",
-  "devDependencies": {
-    "@types/node": "^20.0.0",
-    "typescript": "^5.0.0"
-  }
+    "name": "encdekker-base64",
+    "version": "1.0.0",
+    "description": "Base64 encoding and decoding utilities with validation",
+    "type": "module",
+    "main": "base64.js",
+    "types": "base64.d.ts",
+    "scripts": {
+        "build": "tsc",
+        "test": "npm run build && node --test test/base64.test.js",
+        "test:watch": "npm run build && node --test --watch test/base64.test.js",
+        "example": "npm run build && node example.js"
+    },
+    "keywords": [
+        "base64",
+        "encoding",
+        "decoding",
+        "validation"
+    ],
+    "author": "",
+    "license": "MIT",
+    "devDependencies": {
+        "@types/node": "^20.0.0",
+        "typescript": "^5.0.0"
+    }
 }
-
