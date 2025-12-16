@@ -1,6 +1,6 @@
 # Base64 Encoding/Decoding Module
 
-A TypeScript module providing base64 encoding, decoding, and string type validation utilities.
+A TypeScript module providing base64 encoding, decoding, and string type validation utilities for Node.js environments.
 
 ## Features
 
@@ -8,7 +8,7 @@ A TypeScript module providing base64 encoding, decoding, and string type validat
 - Decode base64 strings to plain text
 - Validate base64 and plain text strings
 - Detect string types automatically
-- Works in both Node.js and browser environments
+- Designed for Node.js (local or remote server installations)
 
 ## Requirements
 

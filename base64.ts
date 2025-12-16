@@ -1,27 +1,13 @@
 /**
  * Base64 encoding and decoding utilities with validation
+ * 
+ * This module is designed for Node.js environments (local or remote server installations).
+ * It uses Node.js Buffer API for base64 operations.
  */
 
+import { Buffer } from 'node:buffer';
+
 export type StringType = 'plain-text' | 'base64' | 'invalid';
-
-// Helper functions to safely access globals
-function getBuffer(): any {
-    return typeof globalThis !== 'undefined' && 'Buffer' in globalThis
-        ? (globalThis as any).Buffer
-        : undefined;
-}
-
-function getBtoa(): ((data: string) => string) | undefined {
-    return typeof globalThis !== 'undefined' && 'btoa' in globalThis
-        ? (globalThis as any).btoa
-        : undefined;
-}
-
-function getAtob(): ((data: string) => string) | undefined {
-    return typeof globalThis !== 'undefined' && 'atob' in globalThis
-        ? (globalThis as any).atob
-        : undefined;
-}
 
 /**
  * Encodes a string to base64
@@ -33,19 +19,7 @@ export function encode(text: string): string {
         throw new TypeError('Input must be a string');
     }
 
-    // Convert string to base64
-    const Buffer = getBuffer();
-    if (Buffer) {
-        // Node.js environment
-        return Buffer.from(text, 'utf8').toString('base64');
-    } else {
-        // Browser environment
-        const btoaFn = getBtoa();
-        if (!btoaFn) {
-            throw new Error('Base64 encoding not available in this environment');
-        }
-        return btoaFn(unescape(encodeURIComponent(text)));
-    }
+    return Buffer.from(text, 'utf8').toString('base64');
 }
 
 /**
@@ -72,18 +46,7 @@ export function decode(base64: string): string {
     }
 
     try {
-        const Buffer = getBuffer();
-        if (Buffer) {
-            // Node.js environment
-            return Buffer.from(cleaned, 'base64').toString('utf8');
-        } else {
-            // Browser environment
-            const atobFn = getAtob();
-            if (!atobFn) {
-                throw new Error('Base64 decoding not available in this environment');
-            }
-            return decodeURIComponent(escape(atobFn(cleaned)));
-        }
+        return Buffer.from(cleaned, 'base64').toString('utf8');
     } catch (error) {
         throw new Error(`Failed to decode base64: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
@@ -136,16 +99,7 @@ export function isBase64(str: string): boolean {
 
     // Try to decode to verify it's actually valid base64
     try {
-        const Buffer = getBuffer();
-        if (Buffer) {
-            Buffer.from(cleaned, 'base64');
-        } else {
-            const atobFn = getAtob();
-            if (!atobFn) {
-                return false;
-            }
-            atobFn(cleaned);
-        }
+        Buffer.from(cleaned, 'base64');
         return true;
     } catch {
         return false;
